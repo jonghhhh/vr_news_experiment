@@ -12,9 +12,17 @@ export default function AframeStimulus({
   const [remaining, setRemaining] = useState(durationSec);
 
   useEffect(() => {
+    // Exit stereo VR mode immediately if A-Frame auto-enters it on mobile
+    const preventStereo = () => {
+      const scene = document.querySelector("a-scene");
+      if (scene) requestAnimationFrame(() => scene.exitVR?.());
+    };
+    document.addEventListener("enter-vr", preventStereo, true);
+
     return () => {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
+      document.removeEventListener("enter-vr", preventStereo, true);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
@@ -90,7 +98,7 @@ export default function AframeStimulus({
         </a-assets>
         <a-videosphere src="#stim-video" rotation="0 -90 0" />
         <a-camera id="cam"
-                  look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: true"
+                  look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: false"
                   wasd-controls-enabled="false" />
       </a-scene>
 
