@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/vr_news_experiment/static/js/main.dbf9cbc9.js",
+    "main.js": "/vr_news_experiment/static/js/main.50f59e56.js",
     "index.html": "/vr_news_experiment/index.html",
-    "main.dbf9cbc9.js.map": "/vr_news_experiment/static/js/main.dbf9cbc9.js.map"
+    "main.50f59e56.js.map": "/vr_news_experiment/static/js/main.50f59e56.js.map"
   },
   "entrypoints": [
-    "static/js/main.dbf9cbc9.js"
+    "static/js/main.50f59e56.js"
   ]
 }
