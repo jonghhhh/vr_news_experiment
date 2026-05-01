@@ -1,5 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState } from "react";
+import Landing from "./screens/Landing";
 import Consent from "./screens/Consent";
 import Screening from "./screens/Screening";
 import PreSurvey from "./screens/PreSurvey";
@@ -10,13 +11,14 @@ import Debrief from "./screens/Debrief";
 import { flushQueue } from "./lib/api";
 
 export default function App() {
-  const [step, setStep] = useState("consent");
+  const [step, setStep] = useState("landing");
   const [assignment, setAssignment] = useState(null);
 
   useEffect(() => { flushQueue(); }, []);
 
   const cell = assignment?.mediaCell;
 
+  if (step === "landing") return <Landing onStart={() => setStep("consent")} />;
   if (step === "consent") return <Consent onAgree={() => setStep("screening")} />;
   if (step === "screening") return <Screening onPass={() => setStep("pre")} />;
   if (step === "pre") return <PreSurvey onDone={() => setStep("device")} />;
