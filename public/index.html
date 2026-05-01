@@ -8,14 +8,87 @@
     <!-- A-Frame: 360°/WebXR 렌더 -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script>
-      // Prevent A-Frame from entering stereo VR mode on mobile
-      AFRAME.registerComponent('prevent-vr', {
+      // 1. Patch enterVR at prototype level — most aggressive stereo prevention
+      AFRAME.AScene.prototype.enterVR = function () { return Promise.resolve(); };
+
+      // 2. Custom touch/mouse look controls with reliable up/down movement
+      AFRAME.registerComponent('free-look', {
         init: function () {
-          var scene = this.el;
-          scene.addEventListener('enter-vr', function () {
-            scene.exitVR();
-          });
-        }
+          this.pitch = 0;
+          this.yaw   = 0;
+          this.pointerDown = false;
+          this.lastX = 0;
+          this.lastY = 0;
+
+          var self = this;
+          var canvas = this.el.sceneEl.canvas;
+
+          var onTouchStart = function (e) {
+            e.preventDefault();
+            self.pointerDown = true;
+            self.lastX = e.touches[0].clientX;
+            self.lastY = e.touches[0].clientY;
+          };
+          var onTouchMove = function (e) {
+            e.preventDefault();
+            if (!self.pointerDown) return;
+            var dx = e.touches[0].clientX - self.lastX;
+            var dy = e.touches[0].clientY - self.lastY;
+            self.yaw   -= dx * 0.25;
+            self.pitch -= dy * 0.25;
+            self.pitch  = Math.max(-85, Math.min(85, self.pitch));
+            self.lastX  = e.touches[0].clientX;
+            self.lastY  = e.touches[0].clientY;
+            self.apply();
+          };
+          var onTouchEnd = function () { self.pointerDown = false; };
+          var onMouseDown = function (e) {
+            self.pointerDown = true;
+            self.lastX = e.clientX;
+            self.lastY = e.clientY;
+          };
+          var onMouseMove = function (e) {
+            if (!self.pointerDown) return;
+            var dx = e.clientX - self.lastX;
+            var dy = e.clientY - self.lastY;
+            self.yaw   -= dx * 0.25;
+            self.pitch -= dy * 0.25;
+            self.pitch  = Math.max(-85, Math.min(85, self.pitch));
+            self.lastX  = e.clientX;
+            self.lastY  = e.clientY;
+            self.apply();
+          };
+          var onMouseUp = function () { self.pointerDown = false; };
+
+          // {passive:false} so e.preventDefault() works and browser scroll is blocked
+          canvas.addEventListener('touchstart',  onTouchStart, {passive: false});
+          canvas.addEventListener('touchmove',   onTouchMove,  {passive: false});
+          canvas.addEventListener('touchend',    onTouchEnd,   {passive: false});
+          canvas.addEventListener('mousedown',   onMouseDown);
+          canvas.addEventListener('mousemove',   onMouseMove);
+          canvas.addEventListener('mouseup',     onMouseUp);
+          window.addEventListener('mouseup',     onMouseUp);
+
+          this._cleanup = function () {
+            canvas.removeEventListener('touchstart',  onTouchStart);
+            canvas.removeEventListener('touchmove',   onTouchMove);
+            canvas.removeEventListener('touchend',    onTouchEnd);
+            canvas.removeEventListener('mousedown',   onMouseDown);
+            canvas.removeEventListener('mousemove',   onMouseMove);
+            canvas.removeEventListener('mouseup',     onMouseUp);
+            window.removeEventListener('mouseup',     onMouseUp);
+          };
+        },
+        apply: function () {
+          var rad = Math.PI / 180;
+          this.el.object3D.rotation.set(
+            this.pitch * rad,
+            this.yaw   * rad,
+            0,
+            'YXZ'
+          );
+        },
+        remove: function () { this._cleanup && this._cleanup(); }
       });
     </script>
     <style>

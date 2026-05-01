@@ -73,9 +73,8 @@ export default function AframeStimulus({
                   width: "100vw", height: "100vh", background: "#000",
                   touchAction: "none" }}>
 
-      {/* prevent-vr: index.html에서 등록한 컴포넌트 — 모바일 스테레오 VR 모드 진입 차단 */}
+      {/* enterVR은 index.html에서 prototype 레벨에서 차단; free-look 컴포넌트로 상하좌우 터치 제어 */}
       <a-scene
-        prevent-vr
         embedded
         loading-screen="enabled: false"
         vr-mode-ui="enabled: false"
@@ -88,9 +87,9 @@ export default function AframeStimulus({
                  webkit-playsinline="true" preload="auto" />
         </a-assets>
         <a-videosphere src="#stim-video" rotation="0 -90 0" />
-        {/* magicWindowTrackingEnabled: false → 손가락 드래그로 상하좌우 모두 제어 */}
         <a-camera id="cam"
-                  look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: false"
+                  free-look
+                  look-controls="enabled: false"
                   wasd-controls-enabled="false" />
       </a-scene>
 
