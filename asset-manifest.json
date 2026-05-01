@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/vr_news_experiment/static/js/main.5ec12efa.js",
+    "index.html": "/vr_news_experiment/index.html",
+    "main.5ec12efa.js.map": "/vr_news_experiment/static/js/main.5ec12efa.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.5ec12efa.js"
+  ]
+}
