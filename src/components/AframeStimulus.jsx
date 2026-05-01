@@ -7,34 +7,17 @@ export default function AframeStimulus({
   war, mediaCell, videoUrl, durationSec, onComplete, onAbort,
 }) {
   const [phase, setPhase] = useState("intro"); // intro | playing
-  const [sceneReady, setSceneReady] = useState(false); // video element가 DOM에 추가됐는지
-  const videoRef = useRef(null);
   const recorderRef = useRef(null);
   const intervalRef = useRef(null);
   const [remaining, setRemaining] = useState(durationSec);
 
-  // 비디오 엘리먼트를 A-Frame 바깥 body에 직접 생성 → A-Frame 간섭 없이 오디오 제어 가능
   useEffect(() => {
-    const video = document.createElement("video");
-    video.id = "stim-video";
-    video.src = videoUrl;
-    video.playsInline = true;
-    video.setAttribute("webkit-playsinline", "true");
-    video.preload = "auto";
-    video.style.display = "none";
-    document.body.appendChild(video);
-    videoRef.current = video;
-    setSceneReady(true); // 이제 a-scene 렌더
-
     return () => {
-      video.pause();
-      video.src = "";
-      if (document.body.contains(video)) document.body.removeChild(video);
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [videoUrl]);
+  }, []);
 
   function finish(reason) {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -46,13 +29,13 @@ export default function AframeStimulus({
     else onComplete?.();
   }
 
-  // 사용자 클릭(제스처) 컨텍스트에서 play() 호출 → 브라우저가 오디오 허용
   const handleStart = () => {
-    const video = videoRef.current;
+    // <a-assets> 내 video 엘리먼트 — 사용자 제스처 컨텍스트에서 play() 호출
+    const video = document.querySelector("#stim-video");
     if (video) {
       video.muted = false;
-      // muted 폴백 없이 재시도만 — 오디오 유지
       video.play().catch(() => {
+        // muted 폴백 없이 재시도만 (오디오 유지)
         setTimeout(() => video.play().catch(() => {}), 300);
       });
 
@@ -66,7 +49,6 @@ export default function AframeStimulus({
 
     setPhase("playing");
 
-    // telemetry 시작 (a-scene이 이미 렌더된 상태이므로 #cam 존재)
     setTimeout(() => {
       const camera = document.querySelector("#cam");
       const rec = new TelemetryRecorder({ war, mediaCell });
@@ -89,23 +71,28 @@ export default function AframeStimulus({
   const mmss = `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "#000" }}>
+    <div style={{ position: "fixed", top: 0, left: 0,
+                  width: "100vw", height: "100vh", background: "#000" }}>
 
-      {/* A-Frame 씬: video 엘리먼트가 body에 추가된 후에 렌더 */}
-      {sceneReady && (
-        <a-scene
-          embedded
-          vr-mode-ui="enabled: false"
-          xr-mode-ui="enabled: false"
-          device-orientation-permission-ui="enabled: false"
-          style={{ width: "100%", height: "100%" }}>
-          {/* a-assets 없이 body의 #stim-video를 직접 참조 */}
-          <a-videosphere src="#stim-video" rotation="0 -90 0" />
-          <a-camera id="cam"
-                    look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: true"
-                    wasd-controls-enabled="false" />
-        </a-scene>
-      )}
+      {/* A-Frame 씬: 항상 렌더, loading-screen 비활성화 */}
+      <a-scene
+        embedded
+        loading-screen="enabled: false"
+        vr-mode-ui="enabled: false"
+        xr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        style={{ width: "100%", height: "100%" }}>
+        {/* timeout="0": 에셋 로딩 완료를 기다리지 않고 씬 즉시 시작 */}
+        <a-assets timeout="0">
+          <video id="stim-video" src={videoUrl}
+                 crossOrigin="anonymous" playsInline
+                 webkit-playsinline="true" preload="auto" />
+        </a-assets>
+        <a-videosphere src="#stim-video" rotation="0 -90 0" />
+        <a-camera id="cam"
+                  look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: true"
+                  wasd-controls-enabled="false" />
+      </a-scene>
 
       {/* 재생 중 HUD */}
       {phase === "playing" && (
@@ -126,7 +113,7 @@ export default function AframeStimulus({
         </>
       )}
 
-      {/* 조작법 안내 오버레이 */}
+      {/* 조작법 안내 오버레이 — A-Frame 위에 z-index 200 */}
       {phase === "intro" && (
         <div style={{
           position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
