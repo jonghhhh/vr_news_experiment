@@ -7,6 +7,17 @@
     <title>VR 뉴스 효과 실험</title>
     <!-- A-Frame: 360°/WebXR 렌더 -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script>
+      // Prevent A-Frame from entering stereo VR mode on mobile
+      AFRAME.registerComponent('prevent-vr', {
+        init: function () {
+          var scene = this.el;
+          scene.addEventListener('enter-vr', function () {
+            scene.exitVR();
+          });
+        }
+      });
+    </script>
     <style>
       html, body { margin: 0; padding: 0; height: 100%; background: #0a0a0a; color: #f0f0f0;
         font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",

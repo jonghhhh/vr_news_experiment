@@ -12,17 +12,9 @@ export default function AframeStimulus({
   const [remaining, setRemaining] = useState(durationSec);
 
   useEffect(() => {
-    // Exit stereo VR mode immediately if A-Frame auto-enters it on mobile
-    const preventStereo = () => {
-      const scene = document.querySelector("a-scene");
-      if (scene) requestAnimationFrame(() => scene.exitVR?.());
-    };
-    document.addEventListener("enter-vr", preventStereo, true);
-
     return () => {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
-      document.removeEventListener("enter-vr", preventStereo, true);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
@@ -38,12 +30,10 @@ export default function AframeStimulus({
   }
 
   const handleStart = () => {
-    // <a-assets> 내 video 엘리먼트 — 사용자 제스처 컨텍스트에서 play() 호출
     const video = document.querySelector("#stim-video");
     if (video) {
       video.muted = false;
       video.play().catch(() => {
-        // muted 폴백 없이 재시도만 (오디오 유지)
         setTimeout(() => video.play().catch(() => {}), 300);
       });
 
@@ -80,23 +70,25 @@ export default function AframeStimulus({
 
   return (
     <div style={{ position: "fixed", top: 0, left: 0,
-                  width: "100vw", height: "100vh", background: "#000" }}>
+                  width: "100vw", height: "100vh", background: "#000",
+                  touchAction: "none" }}>
 
-      {/* A-Frame 씬: 항상 렌더, loading-screen 비활성화 */}
+      {/* prevent-vr: index.html에서 등록한 컴포넌트 — 모바일 스테레오 VR 모드 진입 차단 */}
       <a-scene
+        prevent-vr
         embedded
         loading-screen="enabled: false"
         vr-mode-ui="enabled: false"
         xr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
-        style={{ width: "100%", height: "100%" }}>
-        {/* timeout="0": 에셋 로딩 완료를 기다리지 않고 씬 즉시 시작 */}
+        style={{ width: "100%", height: "100%", touchAction: "none" }}>
         <a-assets timeout="0">
           <video id="stim-video" src={videoUrl}
                  crossOrigin="anonymous" playsInline
                  webkit-playsinline="true" preload="auto" />
         </a-assets>
         <a-videosphere src="#stim-video" rotation="0 -90 0" />
+        {/* magicWindowTrackingEnabled: false → 손가락 드래그로 상하좌우 모두 제어 */}
         <a-camera id="cam"
                   look-controls="reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: false"
                   wasd-controls-enabled="false" />
@@ -121,7 +113,7 @@ export default function AframeStimulus({
         </>
       )}
 
-      {/* 조작법 안내 오버레이 — A-Frame 위에 z-index 200 */}
+      {/* 조작법 안내 오버레이 */}
       {phase === "intro" && (
         <div style={{
           position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
@@ -149,7 +141,7 @@ export default function AframeStimulus({
                 <div style={{ fontSize: 30 }}>👆</div>
                 <strong style={{ fontSize: 14 }}>모바일</strong>
                 <p style={{ margin: "6px 0 0", color: "#aaa", fontSize: 12 }}>
-                  손가락 드래그 또는<br />기기를 기울이세요
+                  손가락으로 드래그해서<br />상하좌우로 둘러보세요
                 </p>
               </div>
             </div>
